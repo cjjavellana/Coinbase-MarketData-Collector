@@ -1,0 +1,4 @@
+Collection        Version
+----------------- -------
+amazon.aws        1.3.0  
+ansible.netcommon 1.4.1  

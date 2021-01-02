@@ -1,0 +1,7 @@
+vpc_id: "vpc-5a8a3c3e"
+security_group_name: "Coinbase Market Data Collector"
+region: "us-east-1"
+tag: "coinbase-marketdata-collector"
+go_rpm: go1.15.6.linux-amd64.tar.gz
+influxdb_rpm: influxdb2-2.0.3.x86_64.rpm
+env_file: /etc/profile.d/env.sh

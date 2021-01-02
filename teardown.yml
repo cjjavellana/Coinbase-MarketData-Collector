@@ -1,0 +1,47 @@
+---
+
+- hosts: localhost
+  connection: local
+
+  tasks:
+    - name: Collect EC2 Instances
+      ec2_instance_info:
+        filters:
+          "tag:Name": "{{ tag }}"
+        region: "{{ region }}"
+        aws_access_key: "{{ ec2_access_key }}"
+        aws_secret_key: "{{ ec2_secret_key }}"
+      register: ec2
+
+    - name: Terminate Market Data Collector instances
+      amazon.aws.ec2:
+        region: "{{ region }}"
+        state: 'absent'
+        instance_ids: '{{ item.instance_id }}'
+        wait: yes
+        wait_timeout: 500
+        aws_access_key: "{{ ec2_access_key }}"
+        aws_secret_key: "{{ ec2_secret_key }}"
+      when: (ec2.instances|length > 0)
+      loop: "{{ ec2.instances }}"
+
+    - name: Collect Security Groups
+      amazon.aws.ec2_group_info:
+        aws_access_key: "{{ ec2_access_key }}"
+        aws_secret_key: "{{ ec2_secret_key }}"
+        # Required. Otherwise it looks for security group
+        # from the default region.
+        region: "{{ region }}"
+        filters:
+          "tag:Name": "{{ tag }}"
+      register: secGroups
+
+    - name: "Delete Security Groups"
+      amazon.aws.ec2_group:
+        aws_access_key: "{{ ec2_access_key }}"
+        aws_secret_key: "{{ ec2_secret_key }}"
+        region: "{{ region }}"
+        group_id: "{{ item.group_id }}"
+        state: absent
+      when: (secGroups.security_groups|length > 0)
+      loop: "{{ secGroups.security_groups }}"

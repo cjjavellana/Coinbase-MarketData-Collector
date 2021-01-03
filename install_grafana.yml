@@ -62,7 +62,7 @@
     - name: grafana.key file exists?
       stat:
         path: "{{ grafana_home }}/grafana/conf/grafana.key"
-      register: grafana_key
+      register: gkey
 
     - name: Create Certificate Key File
       blockinfile:
@@ -71,7 +71,7 @@
           {{ grafana_key }}
         create: yes
         mode: '0644'
-      when: not grafana_key.stat.exists
+      when: not gkey.stat.exists
 
     - name: Create Grafana Config
       blockinfile: 
@@ -87,4 +87,4 @@
           admin_password = {{ grafana_password }}
         create: yes
         mode: '0644'
-      when: not grafana_key.stat.exists
+      when: not gkey.stat.exists

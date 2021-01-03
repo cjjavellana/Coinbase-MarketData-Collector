@@ -3,12 +3,12 @@
   gather_facts: True
   remote_user: ec2-user
   environment:
-        INFLUXD_CONFIG_PATH: /apps/influxdb/config
+    INFLUXD_CONFIG_PATH: /apps/influxdb/config
 
   tasks:
 
     - debug:
-        msg: "InfluxDB Config => '{{ lookup('env', 'INFLUXD_CONFIG_PATH') }}'."
+        msg: "InfluxDB Config => '{{ lookup('env', 'INFLUXD_CONFIG_PATH') }}'"
 
     - name: Copy env.sh to remote
       copy:
@@ -29,3 +29,7 @@
       args:
         executable: /bin/bash
         chdir: "{{ telegraf_home }}"
+      register: telegraf_output
+
+    - debug:
+        msg: "Telegraf => {{ telegraf_output }}"

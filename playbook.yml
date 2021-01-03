@@ -1,2 +1,8 @@
 ---
 - import_playbook: ec2.yml
+- import_playbook: install_influxdb.yml
+- import_playbook: install_go.yml
+- import_playbook: install_telegraf.yml
+- import_playbook: install_grafana.yml
+- import_playbook: start_services.yml
+

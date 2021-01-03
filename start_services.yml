@@ -1,0 +1,31 @@
+- name: Run Services
+  hosts: ec2_group
+  gather_facts: True
+  remote_user: ec2-user
+  environment:
+        INFLUXD_CONFIG_PATH: /apps/influxdb/config
+
+  tasks:
+
+    - debug:
+        msg: "InfluxDB Config => '{{ lookup('env', 'INFLUXD_CONFIG_PATH') }}'."
+
+    - name: Copy env.sh to remote
+      copy:
+        src: env.sh
+        dest: "{{ env_file }}"
+        mode: '0644'
+      become: yes
+
+    - name: Start InfluxDB
+      service:
+        name: influxdb
+        enabled: yes
+        state: started
+      become: yes
+
+    - name: Start Telegraf
+      shell: ./telegraf -config telegraf.conf > /dev/null 2>&1 &
+      args:
+        executable: /bin/bash
+        chdir: "{{ telegraf_home }}"

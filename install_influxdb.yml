@@ -1,0 +1,51 @@
+- name: Configure InfluxDB
+  hosts: ec2_group
+  gather_facts: True
+  remote_user: ec2-user
+
+  tasks:
+
+    - name: update the system
+      yum:
+        name: "*"
+        state: latest
+      become: yes
+
+    - name: Install a list of packages (suitable replacement for 2.11 loop deprecation warning)
+      yum:
+        name:
+          - git
+          - gcc
+        state: present
+      become: yes
+
+    - name: Create InfluxDB Directory
+      file:
+        path: /apps/influxdb/config
+        state: directory
+        owner: ec2-user
+        group: ec2-user
+      become: yes
+
+    - name: Download InfluxDB Installer
+      get_url:
+        url: https://dl.influxdata.com/influxdb/releases/{{ influxdb_rpm }}
+        dest: /apps/influxdb/{{ influxdb_rpm }}
+
+    - name: Install InfluxDB
+      yum:
+        name: /apps/influxdb/{{ influxdb_rpm }}
+        state: present
+      become: yes
+
+    - name: Delete InfluxDB Installer
+      file:
+        path: /apps/influxdb/{{ influxdb_rpm }}
+        state: absent
+
+    - name: Copy InfluxDB config.yml to remote
+      copy:
+        src: influxdb_config.yml
+        dest: /apps/influxdb/config/config.yml
+        mode: '0644'
+

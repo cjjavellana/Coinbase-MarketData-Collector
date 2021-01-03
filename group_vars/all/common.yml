@@ -4,4 +4,7 @@ region: "us-east-1"
 tag: "coinbase-marketdata-collector"
 go_rpm: go1.15.6.linux-amd64.tar.gz
 influxdb_rpm: influxdb2-2.0.3.x86_64.rpm
+grafana_ver: 7.3.6
+grafana_bin: grafana-{{ grafana_ver }}.linux-amd64.tar.gz
 env_file: /etc/profile.d/env.sh
+telegraf_home: /apps/telegraf

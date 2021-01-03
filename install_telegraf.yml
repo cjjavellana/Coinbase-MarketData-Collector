@@ -1,0 +1,25 @@
+- name: Configure Telegraf
+  hosts: ec2_group
+  gather_facts: True
+  remote_user: ec2-user
+
+  tasks:
+
+    - name: Create Telegraf Directory
+      git:
+        repo: 'https://github.com/cjjavellana/telegraf.git'
+        dest: "{{ telegraf_home }}"
+        depth: 1
+
+    - name: Compile Telegraf
+      command:  make telegraf
+      args:
+        chdir: "{{ telegraf_home }}"
+      environment:
+        PATH: "{{ ansible_env.PATH }}:/apps/go/go/bin"
+
+    - name: Copy telegraf config to remote
+      copy:
+        src: telegraf.conf
+        dest: "{{ telegraf_home }}/telegraf.conf"
+        mode: '0644'

@@ -1,0 +1,2 @@
+engine-path: /apps/influxdb/engine
+reporting-disabled: true

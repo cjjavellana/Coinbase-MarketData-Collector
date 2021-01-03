@@ -1,0 +1,90 @@
+- name: Configure Grafana
+  hosts: ec2_group
+  gather_facts: True
+  remote_user: ec2-user
+  vars:
+    grafana_home: /apps/grafana
+
+  tasks:
+
+    - name: Create Grafana Directory
+      file:
+        path: "{{ grafana_home }}"
+        state: directory
+        owner: ec2-user
+        group: ec2-user
+      become: yes
+
+    - name: Is Grafana Installer Present
+      stat:
+        path: "{{ grafana_home }}/{{ grafana_bin }}"
+      register: grafana
+
+    - name: Download Grafana Installer
+      get_url:
+        url: https://dl.grafana.com/oss/release/{{ grafana_bin }}
+        dest: "{{ grafana_home }}/{{ grafana_bin }}"
+      when: not grafana.stat.exists
+
+    - name: Extract Grafana
+      unarchive:
+        src: "{{ grafana_home }}/{{ grafana_bin }}"
+        dest: "{{ grafana_home }}"
+        creates: "{{ grafana_home }}/grafana-{{ grafana_ver }}"
+        remote_src: yes
+      register: grafana_extract_result
+
+    - debug:
+        msg: "Grafana Extract Result {{ grafana_extract_result }}"
+    
+    # Create a softlink here
+    - name: Link /apps/grafana/grafana to new version
+      file:
+        path: "{{ grafana_home }}/grafana"
+        src:  "{{ grafana_home }}/grafana-{{ grafana_ver }}"
+        state: link
+
+    - name: Delete Grafana Installer
+      file:
+        path: "{{ grafana_home }}/{{ grafana_bin }}"
+        state: absent
+      when: grafana.stat.exists
+
+    - name: Copy Certificate file
+      copy:
+        src: grafana.crt
+        dest: "{{ grafana_home }}/grafana/conf/grafana.crt"
+        # /apps/grafana/grafana is a symlink
+        # follow it
+        follow: yes
+        mode: '0644'
+
+    - name: grafana.key file exists?
+      stat:
+        path: "{{ grafana_home }}/grafana/conf/grafana.key"
+      register: grafana_key
+
+    - name: Create Certificate Key File
+      blockinfile:
+        path: "{{ grafana_home }}/grafana/conf/grafana.key"
+        block: |
+          {{ grafana_key }}
+        create: yes
+        mode: '0644'
+      when: not grafana_key.stat.exists
+
+    - name: Create Grafana Config
+      blockinfile: 
+        path: "{{ grafana_home }}/grafana/conf/grafana.init"
+        block: |
+          [server]
+          protocol = https
+          cert_file = {{ grafana_home }}/grafana/conf/grafana.crt
+          cert_key = {{ grafana_home }}/grafana/conf/grafana.key
+
+          [security]
+          admin_user = {{ grafana_user }}
+          admin_password = {{ grafana_password }}
+        create: yes
+        mode: '0644'
+      when: not grafana_key.stat.exists

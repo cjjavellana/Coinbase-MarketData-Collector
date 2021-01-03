@@ -24,7 +24,6 @@
             cidr_ip: 0.0.0.0/0
             rule_desc: ssh, grafana
 
-
     - name: Create Ec2 Instance
       amazon.aws.ec2:
         key_name: ChristianAWS-KeyPair2021
@@ -48,53 +47,6 @@
         region: "{{ region }}"
         aws_access_key: "{{ ec2_access_key }}"
         aws_secret_key: "{{ ec2_secret_key }}"
-        user_data: |
-          #!/bin/sh 
-
-          # Install dependencies
-          yum update -y
-          yum install -y git gcc 
-
-          # Create application directories
-          mkdir -p /apps/go /apps/influxdb/config /apps/grafana
-
-          # Install GO
-          cd /apps/go
-          wget https://golang.org/dl/{{ go_rpm }}
-          tar xzvf {{ go_rpm }}
-          rm -f {{ go_rpm }}
-
-          # Set Environment Variables
-          echo "#!/bin/sh" >> {{ env_file }}
-          echo "export GO_PATH=/apps/go/go" >> {{ env_file }}
-          echo "export PATH=\$PATH:\$GOPATH/bin" >> {{ env_file }}
-          echo "export INFLUXD_CONFIG_PATH=/apps/influxdb/config" >> {{ env_file }}
-
-          # Download and Compile telegraf with Coinbase MarketData Collector Plugin
-          cd /apps
-          git clone --depth 1 https://github.com/cjjavellana/telegraf.git
-          cd telegraf
-          make
-
-          # Configure InfluxDB 
-          echo "engine-path: /apps/influxdb/engine" >> /apps/influxdb/config/config.yml
-          echo "source /etc/profile.d/env.sh" >> /home/ec2-user/.bash_profile
-
-          # Active Environment Variables
-          source /etc/profile.d/env.sh
-
-          # Download and Install InfluxDB
-          cd /apps/influxdb
-          wget https://dl.influxdata.com/influxdb/releases/{{ influxdb_rpm }}
-          yum localinstall -y {{ influxdb_rpm }}
-          rm -f {{ influxdb_rpm }}
-
-          # Move ownership to ec2-user
-          chown -R ec2-user:ec2-user /apps
-
-          # Start InfluxDB & Enable Start on Boot
-          service influxdb enable
-          systemctl enable influxdb
       register: ec2
 
     - name: Add newly created ec2 Instance to hosts
@@ -106,16 +58,8 @@
     - name: Wait for SSH to come up
       delegate_to: "{{ item.public_dns_name }}"
       wait_for_connection:
-        delay: 60
+        delay: 30
         timeout: 600
       loop: "{{ ec2.tagged_instances }}"
-
-- name: Configure Instances
-  hosts: ec2_group
-  gather_facts: True
-  remote_user: ec2-user
-
-  tasks:
-
-    - name: Run Command
-      command: echo "Hello World"
+      environment:
+        ANSIBLE_HOST_KEY_CHECKING: False
